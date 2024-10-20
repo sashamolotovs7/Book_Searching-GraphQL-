@@ -6,16 +6,19 @@ import { setContext } from '@apollo/client/link/context';
 
 // Set up the HTTP link for Apollo Client to communicate with the GraphQL server
 const httpLink = createHttpLink({
-  uri: '/graphql', // The GraphQL endpoint (adjust if necessary)
+  uri: 'http://localhost:3001/graphql', // Full URL to GraphQL endpoint
 });
 
 // Set up authentication with the Authorization header, passing the JWT token
 const authLink = setContext((_, { headers }) => {
-  const token = localStorage.getItem('id_token'); // Get JWT from localStorage
+  // Retrieve the JWT token from localStorage
+  const token = localStorage.getItem('id_token');
+  
+  // Return the headers with the Authorization token included
   return {
     headers: {
       ...headers,
-      authorization: token ? `Bearer ${token}` : '', // Attach the token if available
+      authorization: token ? `Bearer ${token}` : '', // Set Bearer token if available
     },
   };
 });
@@ -30,7 +33,7 @@ function App() {
   return (
     <ApolloProvider client={client}> {/* Provide the Apollo client to the app */}
       <Navbar />
-      <Outlet />
+      <Outlet /> {/* Render the current page */}
     </ApolloProvider>
   );
 }
