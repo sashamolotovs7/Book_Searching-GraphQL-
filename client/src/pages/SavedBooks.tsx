@@ -6,7 +6,9 @@ import { removeBookId } from '../utils/localStorage';
 
 const SavedBooks = () => {
   const { loading, data } = useQuery(GET_ME); // Use Apollo Client's useQuery to fetch user data
-  const [removeBook] = useMutation(REMOVE_BOOK); // Mutation to remove a book
+  const [removeBook] = useMutation(REMOVE_BOOK, {
+    refetchQueries: [{ query: GET_ME }],
+  });
 
   const userData = data?.me || {};
 
@@ -17,7 +19,7 @@ const SavedBooks = () => {
       });
       removeBookId(bookId); // Also remove the book from localStorage
     } catch (err) {
-      console.error(err);
+      console.error('Error deleting book:', err.message);
     }
   };
 
