@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 
 // Set up the HTTP link for Apollo Client to communicate with the GraphQL server
 const httpLink = createHttpLink({
-  uri: 'http://localhost:3001/graphql', // Full URL to GraphQL endpoint
+  uri: 'https://your-backend-service.onrender.com/graphql', // Updated URL for deployed GraphQL endpoint
 });
 
 // Set up authentication with the Authorization header, passing the JWT token
