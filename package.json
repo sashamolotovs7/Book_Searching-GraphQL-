@@ -5,15 +5,16 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/dist/server.js",
-    "build": "cd client && npm run build && cd ../server && npm run build",
+    "develop": "concurrently \"cd server && npm run watch\" \"cd client && npm run dev\"",
+    "build": "npm run install-all && cd client && npm run build && cd ../server && npm run build",
+    "install": "cd server && npm install && cd ../client && npm install",
+    "render-build": "npm run install-all && npm run build",
     "install-client": "cd client && npm install",
     "install-server": "cd server && npm install",
-    "install-all": "npm run install-server && npm run install-client",
-    "render-build": "npm run install-all && npm run build"
+    "install-all": "npm run install-server && npm run install-client"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
   "dependencies": {
     "@apollo/client": "^3.11.8",
     "apollo-server-express": "^3.13.0",
@@ -21,7 +22,8 @@
     "express": "^4.19.2",
     "graphql": "^16.9.0",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^8.0.0"
+    "mongoose": "^8.0.0",
+    "pg": "^8.10.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
@@ -31,6 +33,7 @@
     "concurrently": "^8.2.2",
     "dotenv": "^16.4.5",
     "nodemon": "^3.1.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vite": "^4.0.0"
   }
 }
