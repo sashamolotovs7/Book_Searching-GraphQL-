@@ -1,69 +1,59 @@
-import express from 'express';
-const router = express.Router();
-import {
-  createUser,
-  getSingleUser,
-  saveBook,
-  deleteBook,
-  login,
-} from '../../controllers/user-controller.js';
+import { Request, Response } from 'express';
+import User from '../../models/User';
+import bcrypt from 'bcrypt';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
-// import middleware
-import { authenticateToken } from '../../services/auth.js';
+const secretKey = process.env.JWT_SECRET_KEY || 'defaultSecret';
 
-// Helper function to extract error message
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
+declare module 'express' {
+  export interface Request {
+    user?: JwtPayload;
+  }
 }
 
-// put authMiddleware anywhere we need to send a token for verification of user
-router.route('/')
-  .post(async (req, res) => {
-    try {
-      const user = await createUser(req, res);
-      res.status(201).json(user);  // Return the created user with status 201
-    } catch (error) {
-      res.status(500).json({ message: getErrorMessage(error) });
-    }
-  })
-  .put(authenticateToken, async (req, res) => {
-    try {
-      const user = await saveBook(req, res);
-      res.status(200).json(user);  // Return updated user with status 200
-    } catch (error) {
-      res.status(500).json({ message: getErrorMessage(error) });
-    }
-  });
+export const createUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { username, email, password } = req.body as { username: string; email: string; password: string };
 
-router.route('/login')
-  .post(async (req, res) => {
-    try {
-      const user = await login(req, res);
-      res.status(200).json(user);  // Return the logged-in user
-    } catch (error) {
-      res.status(401).json({ message: getErrorMessage(error) });  // Return unauthorized if login fails
-    }
-  });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await User.create({
+      username,
+      email,
+      password: hashedPassword,
+    });
 
-router.route('/me')
-  .get(authenticateToken, async (req, res) => {
-    try {
-      const user = await getSingleUser(req, res);
-      res.status(200).json(user);  // Return the authenticated user's info
-    } catch (error) {
-      res.status(500).json({ message: getErrorMessage(error) });
-    }
-  });
+    const token = jwt.sign({ id: newUser._id, email: newUser.email }, secretKey, {
+      expiresIn: '1h',
+    });
 
-router.route('/books/:bookId')
-  .delete(authenticateToken, async (req, res) => {
-    try {
-      const user = await deleteBook(req, res);
-      res.status(200).json(user);  // Return the updated user info after book removal
-    } catch (error) {
-      res.status(500).json({ message: getErrorMessage(error) });
-    }
-  });
+    res.status(201).json({ token, user: newUser });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+};
 
-export default router;
+export const login = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, password } = req.body as { email: string; password: string };
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      res.status(401).json({ error: 'Invalid email or password' });
+      return;
+    }
+
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      res.status(401).json({ error: 'Invalid email or password' });
+      return;
+    }
+
+    const token = jwt.sign({ id: user._id, email: user.email }, secretKey, {
+      expiresIn: '1h',
+    });
+
+    res.status(200).json({ token, user });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to log in' });
+  }
+};

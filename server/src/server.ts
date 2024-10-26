@@ -1,107 +1,125 @@
-import express, { Application, RequestHandler } from 'express';
-import path from 'path';
+// server.ts:
 import { ApolloServer } from 'apollo-server-express';
+import express, { Application, Request, Response, NextFunction } from 'express';
+import path from 'path';
 import cors from 'cors';
-import db from './config/connection.js';
-import typeDefs from './schemas/typeDefs.js';
-import resolvers from './schemas/resolvers.js';
 import dotenv from 'dotenv';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
+import connectDB from './config/connection';
+import typeDefs from './schemas/typeDefs';
+import resolvers from './schemas/resolvers';
 
-dotenv.config(); // Load environment variables
+// Extend Express Request type to include `user`
+declare module 'express' {
+  interface Request {
+    user?: JwtPayload | string; // Adding the `user` property to the Request type
+  }
+}
 
-const app: Application = express();
+// Load environment variables
+dotenv.config();
+
+const app = express() as Application;
 const PORT = process.env.PORT || 3001;
+const secretKey = process.env.JWT_SECRET || 'fallbackSecretKey';
 
-// Enable rate limiting
+// Connect to the database
+connectDB();
+
+// Rate limiting middleware
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 100,
 });
+app.use(limiter);
 
-// Explicitly typecast the limiter to `RequestHandler` to resolve type mismatch
-app.use(limiter as unknown as RequestHandler);
+// Add allowed origins for CORS
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://book-searching-graphql.onrender.com',
+  'https://studio.apollographql.com', // Allow Apollo Studio for development
+];
 
-// CORS Configuration
 app.use(
   cors({
-    origin: [
-      // 'http://localhost:3000', // Your frontend during local development
-      // 'https://studio.apollographql.com', // Apollo Studio
-      'https://your-frontend-app.onrender.com', // Updated with your frontend Render URL
-    ],
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Authorization', 'Content-Type'],
-    credentials: true,
+    credentials: true, // Allow cookies to be sent
   })
 );
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Apollo server setup
+// JWT Authentication Middleware
+const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    res.status(401).json({ error: 'No token provided' });
+    return; // Ensure function ends here
+  }
+
+  try {
+    const decoded = jwt.verify(token, secretKey);
+    req.user = decoded as JwtPayload;
+    next();
+  } catch (err) {
+    res.status(403).json({ error: 'Invalid token' });
+    return; // Ensure function ends here
+  }
+};
+
+// Example of a protected route
+app.get('/api/protected', authenticateToken, (req: Request, res: Response) => {
+  if (!req.user) {
+    res.status(403).json({ error: 'No user found in request' });
+    return;
+  }
+  res.json({ message: 'This is a protected route', user: req.user });
+});
+
+// Apollo Server setup
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  context: ({ req }) => {
+  context: ({ req }: { req: Request }) => {
     const token = req.headers.authorization || '';
-    console.log(`Request received: ${req.method} ${req.url}, Token: ${token}`); // Log request details and token
-
-    // Ignore health check requests from Apollo Studio or specific URLs
-    if (req.headers['user-agent']?.includes('Apollo') || req.url === '/graphql/health') {
-      return {};
-    }
-
     if (token.startsWith('Bearer ')) {
-      const formattedToken = token.split(' ')[1];
-      const secretKey = process.env.JWT_SECRET_KEY;
-
-      if (!secretKey) {
-        throw new Error('JWT_SECRET_KEY is not defined in environment variables.');
-      }
-
       try {
+        const formattedToken = token.split(' ')[1];
         const decoded = jwt.verify(formattedToken, secretKey);
-        console.log('Decoded Token:', decoded);
         return { user: decoded };
-      } catch (err) {
-        if (err instanceof Error) {
-          console.error('Invalid token:', err.message);
-        } else {
-          console.error('Unknown error occurred during token verification.');
-        }
+      } catch (error) {
+        console.error('Invalid token:', error);
       }
     }
     return {};
   },
-  introspection: process.env.NODE_ENV !== 'production', // Enable introspection only in development
+  introspection: process.env.NODE_ENV !== 'production',
 });
 
-// Start Apollo server
 async function startServer() {
   await server.start();
-  server.applyMiddleware({ app, path: '/graphql' });
+  server.applyMiddleware({ app });
 
-  // Serve client from dist folder when in production
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../client/dist')));
     app.get('*', (_, res) => {
       res.sendFile(path.join(__dirname, '../client/dist/index.html'));
     });
   } else {
-    // Development - serve a message to indicate the app is running
     app.get('/', (_, res) => {
       res.send('<h1>Book App is running. Go to <a href="http://localhost:3000">Frontend</a></h1>');
     });
   }
 
-  // Start listening on the specified port
-  db.once('open', () => {
-    app.listen(PORT, () => {
-      console.log(`🌍 Book app is running on http://localhost:${PORT}`);
-      console.log(`🚀 GraphQL endpoint available at http://localhost:${PORT}${server.graphqlPath}`);
-    });
+  app.listen(PORT, () => {
+    console.log(`🌍 Book app is running on http://localhost:${PORT}`);
+    console.log(`🚀 GraphQL endpoint available at http://localhost:${PORT}/graphql`);
   });
 }
 

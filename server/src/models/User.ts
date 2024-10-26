@@ -1,60 +1,30 @@
-import { Schema, model, type Document } from 'mongoose';
+import { Schema, model, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
-import bookSchema from './Book.js';
-import type { BookDocument } from './Book.js';
 
-export interface UserDocument extends Document {
-  id: string;
+interface UserDocument extends Document {
   username: string;
   email: string;
   password: string;
-  savedBooks: BookDocument[];
-  isCorrectPassword(password: string): Promise<boolean>;
-  bookCount: number;
+  savedBooks: { bookId: string; title: string }[];
+  comparePassword: (password: string) => Promise<boolean>;
 }
 
-const userSchema = new Schema<UserDocument>(
-  {
-    username: {
-      type: String,
-      required: true,
-      unique: true,
+const userSchema = new Schema<UserDocument>({
+  username: { type: String, required: true },
+  email: { type: String, required: true },
+  password: { type: String, required: true },
+  savedBooks: [
+    {
+      bookId: { type: String },
+      title: { type: String },
     },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      match: [/.+@.+\..+/, 'Must use a valid email address'],
-    },
-    password: {
-      type: String,
-      required: true,
-    },
-    savedBooks: [bookSchema], // Ensure savedBooks follows bookSchema
-  },
-  {
-    toJSON: {
-      virtuals: true,
-    },
-  }
-);
-
-userSchema.pre('save', async function (next) {
-  if (this.isNew || this.isModified('password')) {
-    const saltRounds = 10;
-    this.password = await bcrypt.hash(this.password, saltRounds);
-  }
-  next();
+  ],
 });
 
-userSchema.methods.isCorrectPassword = async function (password: string) {
+userSchema.methods.comparePassword = async function (password: string): Promise<boolean> {
   return await bcrypt.compare(password, this.password);
 };
 
-userSchema.virtual('bookCount').get(function () {
-  return this.savedBooks.length;
-});
-
 const User = model<UserDocument>('User', userSchema);
-
 export default User;
+export type { UserDocument }; // Add this export to use elsewhere

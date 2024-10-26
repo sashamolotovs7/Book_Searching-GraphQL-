@@ -1,17 +1,11 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import {
-  Container,
-  Col,
-  Form,
-  Button,
-  Card,
-  Row
-} from 'react-bootstrap';
+import { Container, Col, Form, Button, Card, Row } from 'react-bootstrap';
 
 import Auth from '../utils/auth';
 import { useMutation } from '@apollo/client';
 import { SAVE_BOOK } from '../utils/mutations';
+import { GET_ME } from '../utils/queries';
 import { saveBookIds, getSavedBookIds } from '../utils/localStorage';
 import type { Book } from '../models/Book';
 import type { GoogleAPIBook } from '../models/GoogleAPIBook';
@@ -26,7 +20,7 @@ const SearchBooks = () => {
   // create state to hold saved bookId values
   const [savedBookIds, setSavedBookIds] = useState(getSavedBookIds());
 
-  const [saveBook, { error }] = useMutation(SAVE_BOOK);
+  const [saveBookMutation] = useMutation(SAVE_BOOK);
 
   // set up useEffect hook to save `savedBookIds` list to localStorage on component unmount
   useEffect(() => {
@@ -78,14 +72,26 @@ const SearchBooks = () => {
     }
 
     try {
-      const { data } = await saveBook({
-        variables: { input: bookToSave },
+      const { data } = await saveBookMutation({
+        variables: { book: bookToSave },
+        update: (cache, { data: { saveBook } }) => {
+          try {
+            // Update cache with the new saved books
+            cache.writeQuery({
+              query: GET_ME,
+              data: { me: saveBook },
+            });
+          } catch (e) {
+            console.error('Error updating cache:', e);
+          }
+        },
       });
 
       if (data) {
+        console.log('Book saved:', data);
         setSavedBookIds([...savedBookIds, bookToSave.bookId]);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving book:', err.message);
     }
   };

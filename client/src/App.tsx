@@ -1,34 +1,7 @@
 import './App.css';
 import { Outlet } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@apollo/client';
-import { setContext } from '@apollo/client/link/context';
 import { useEffect } from 'react';
-
-// Set up the HTTP link for Apollo Client to communicate with the GraphQL server
-const httpLink = createHttpLink({
-  uri: 'https://your-backend-service.onrender.com/graphql', // Updated URL for deployed GraphQL endpoint
-});
-
-// Set up authentication with the Authorization header, passing the JWT token
-const authLink = setContext((_, { headers }) => {
-  // Retrieve the JWT token from localStorage
-  const token = localStorage.getItem('id_token');
-
-  // Return the headers with the Authorization token included
-  return {
-    headers: {
-      ...headers,
-      authorization: token ? `Bearer ${token}` : '', // Set Bearer token if available
-    },
-  };
-});
-
-// Set up Apollo Client
-const client = new ApolloClient({
-  link: authLink.concat(httpLink), // Combine the auth link and the HTTP link
-  cache: new InMemoryCache(), // Set up cache management
-});
 
 // The main App component
 function App() {
@@ -43,10 +16,10 @@ function App() {
   }, []); // Run once when the app mounts
 
   return (
-    <ApolloProvider client={client}> {/* Provide the Apollo client to the app */}
+    <>
       <Navbar /> {/* Navbar component */}
       <Outlet /> {/* Render the current page */}
-    </ApolloProvider>
+    </>
   );
 }
 

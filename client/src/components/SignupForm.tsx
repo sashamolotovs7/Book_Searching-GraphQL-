@@ -31,8 +31,12 @@ const SignupForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
         variables: { ...userFormData },
       });
 
-      Auth.login(data.addUser.token); // Store the token after signup
-      handleModalClose(); // Close modal after signup
+      if (data?.addUser?.token) {
+        Auth.login(data.addUser.token); // Store the token after signup
+        handleModalClose(); // Close modal after signup
+      } else {
+        setShowAlert(true);
+      }
     } catch (err) {
       console.error(err);
       setShowAlert(true);
