@@ -1,4 +1,3 @@
-// server.ts:
 import { ApolloServer } from 'apollo-server-express';
 import express, { Application, Request, Response, NextFunction } from 'express';
 import path from 'path';
