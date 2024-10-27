@@ -1,4 +1,5 @@
-import React from 'react';
+// src/index.tsx
+import React from 'react'; // Re-add this line if ESLint rules require it
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './App.css';

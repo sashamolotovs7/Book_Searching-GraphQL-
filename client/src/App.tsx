@@ -1,26 +1,18 @@
-import './App.css';
-import { Outlet } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
+import SearchBooks from './pages/SearchBooks';
+import SavedBooks from './pages/SavedBooks';
 import Navbar from './components/Navbar';
-import { useEffect } from 'react';
 
-// The main App component
-function App() {
-  useEffect(() => {
-    // Log to help confirm that the token is correctly set during app initialization
-    const token = localStorage.getItem('id_token');
-    if (token) {
-      console.log('JWT Token available: ', token);
-    } else {
-      console.warn('No JWT token found. User might not be authenticated.');
-    }
-  }, []); // Run once when the app mounts
-
+const App: React.FC = () => {
   return (
     <>
-      <Navbar /> {/* Navbar component */}
-      <Outlet /> {/* Render the current page */}
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<SearchBooks />} />
+        <Route path="/saved" element={<SavedBooks />} />
+      </Routes>
     </>
   );
-}
+};
 
 export default App;

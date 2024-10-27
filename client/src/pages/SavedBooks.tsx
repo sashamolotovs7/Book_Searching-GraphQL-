@@ -4,6 +4,14 @@ import { GET_ME } from '../utils/queries';
 import { REMOVE_BOOK } from '../utils/mutations';
 import { removeBookId } from '../utils/localStorage';
 
+interface Book {
+  bookId: string;
+  image: string;
+  title: string;
+  authors: string[];
+  description: string;
+}
+
 const SavedBooks = () => {
   const { loading, data } = useQuery(GET_ME); // Use Apollo Client's useQuery to fetch user data
   const [removeBook] = useMutation(REMOVE_BOOK, {
@@ -31,7 +39,7 @@ const SavedBooks = () => {
     <>
       <div className="text-light bg-dark p-5">
         <Container>
-          <h1>Viewing {userData.username}'s saved books!</h1>
+          <h1>Viewing {userData.username}&apos;s saved books!</h1>
         </Container>
       </div>
       <Container>
@@ -41,7 +49,7 @@ const SavedBooks = () => {
             : 'You have no saved books!'}
         </h2>
         <Row>
-          {userData.savedBooks?.map((book: any) => (
+          {userData.savedBooks?.map((book: Book) => (
             <Col md="4" key={book.bookId}>
               <Card border="dark">
                 {book.image && (
