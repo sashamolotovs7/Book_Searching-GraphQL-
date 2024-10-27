@@ -30,6 +30,7 @@ class AuthService {
       
       return false;
     } catch (err) {
+      console.error('Error decoding the Token:', err);
       return false;
     }
   }

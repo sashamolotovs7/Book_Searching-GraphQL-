@@ -3,7 +3,7 @@ import User from '../../models/User';
 import bcrypt from 'bcrypt';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
-const secretKey = process.env.JWT_SECRET_KEY || 'defaultSecret';
+const secretKey = process.env.JWT_SECRET || 'defaultSecret';
 
 // Extend Express Request type to include `user` that is consistent with server.ts
 declare module 'express' {

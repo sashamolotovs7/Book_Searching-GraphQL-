@@ -94,7 +94,9 @@ const resolvers = {
         console.error('Authentication error: User must be logged in to save a book.');
         throw new Error('You need to be logged in!');
       }
-
+      console.log('User trying to save book:', user.id);
+      console.log('Book data received:', book);
+      
       try {
         console.log('Attempting to save book for user:', user.id);
         const updatedUser = await User.findByIdAndUpdate(

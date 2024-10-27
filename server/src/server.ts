@@ -39,7 +39,6 @@ const allowedOrigins = [
   'https://book-searching-graphql.onrender.com',
   'https://studio.apollographql.com', // Allow Apollo Studio for development
 ];
-
 app.use(
   cors({
     origin: allowedOrigins,

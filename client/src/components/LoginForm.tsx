@@ -1,14 +1,15 @@
-import { useState } from "react";
+import React, { useState } from "react"; // Importing React
 import { Form, Button, Alert } from "react-bootstrap";
 import { useMutation } from "@apollo/client";
 import { LOGIN_USER } from "../utils/mutations";
 import Auth from "../utils/auth";
 
+// Define props for the LoginForm component
 interface LoginFormProps {
   handleModalClose: () => void;
 }
 
-const LoginForm = ({ handleModalClose }: LoginFormProps) => {
+const LoginForm: React.FC<LoginFormProps> = ({ handleModalClose }) => {
   const [userFormData, setUserFormData] = useState({ email: "", password: "" });
   const [validated, setValidated] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
@@ -33,10 +34,7 @@ const LoginForm = ({ handleModalClose }: LoginFormProps) => {
           variables: { ...userFormData },
         });
 
-        // Ensure data and token exist before storing them
         if (data?.login?.token) {
-          console.log("Token saved to localStorage:", data.login.token);
-
           // Use Auth helper to manage the token
           Auth.login(data.login.token);
 

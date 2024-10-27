@@ -19,7 +19,7 @@ const SavedBooks = () => {
       });
       removeBookId(bookId); // Also remove the book from localStorage
     } catch (err) {
-      console.error('Error deleting book:', err.message);
+      console.error('Error deleting book:', (err as Error).message);
     }
   };
 
@@ -29,29 +29,36 @@ const SavedBooks = () => {
 
   return (
     <>
-      <div className='text-light bg-dark p-5'>
+      <div className="text-light bg-dark p-5">
         <Container>
           <h1>Viewing {userData.username}'s saved books!</h1>
         </Container>
       </div>
       <Container>
-        <h2 className='pt-5'>
+        <h2 className="pt-5">
           {userData.savedBooks && userData.savedBooks.length
             ? `Viewing ${userData.savedBooks.length} saved books:`
             : 'You have no saved books!'}
         </h2>
         <Row>
-          {userData.savedBooks?.map((book) => (
-            <Col md='4' key={book.bookId}>
-              <Card border='dark'>
+          {userData.savedBooks?.map((book: any) => (
+            <Col md="4" key={book.bookId}>
+              <Card border="dark">
                 {book.image && (
-                  <Card.Img src={book.image} alt={`The cover for ${book.title}`} variant='top' />
+                  <Card.Img
+                    src={book.image}
+                    alt={`The cover for ${book.title}`}
+                    variant="top"
+                  />
                 )}
                 <Card.Body>
                   <Card.Title>{book.title}</Card.Title>
-                  <p className='small'>Authors: {book.authors.join(', ')}</p>
+                  <p className="small">Authors: {book.authors.join(', ')}</p>
                   <Card.Text>{book.description}</Card.Text>
-                  <Button className='btn-block btn-danger' onClick={() => handleDeleteBook(book.bookId)}>
+                  <Button
+                    className="btn-block btn-danger"
+                    onClick={() => handleDeleteBook(book.bookId)}
+                  >
                     Delete this Book!
                   </Button>
                 </Card.Body>

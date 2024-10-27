@@ -1,4 +1,4 @@
-import React from 'react';
+/// <reference types="vite/client" />
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -6,13 +6,13 @@ import { ApolloProvider, ApolloClient, InMemoryCache, createHttpLink } from '@ap
 import { setContext } from '@apollo/client/link/context';
 
 // Import components and pages
-import App from './App.jsx';
+import App from './App';
 import SearchBooks from './pages/SearchBooks';
 import SavedBooks from './pages/SavedBooks';
 
 // Create the HTTP link for the Apollo Client
 const httpLink = createHttpLink({
-  uri: import.meta.env.PROD
+  uri: import.meta.env.VITE_PROD === 'true' // Check the VITE_PROD variable as a string
     ? import.meta.env.VITE_REACT_APP_GRAPHQL_URI_PRODUCTION
     : import.meta.env.VITE_REACT_APP_GRAPHQL_URI_LOCAL,
 });
@@ -53,8 +53,15 @@ const router = createBrowserRouter([
   },
 ]);
 
-// Render the root component with ApolloProvider and RouterProvider
-ReactDOM.createRoot(document.getElementById('root')!).render(
+// Get the root element and throw an error if not found
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error("Root element not found. Unable to render the app.");
+}
+
+// Use a type assertion to let TypeScript know that rootElement is not null
+const root = ReactDOM.createRoot(rootElement as HTMLElement);
+root.render(
   <ApolloProvider client={client}>
     <RouterProvider router={router} />
   </ApolloProvider>
